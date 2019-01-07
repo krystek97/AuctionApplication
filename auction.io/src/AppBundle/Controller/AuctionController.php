@@ -9,7 +9,10 @@
 namespace AppBundle\Controller;
 
 
+use AppBundle\Entity\auctions;
+use AppBundle\Form\AuctionType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -20,35 +23,43 @@ class AuctionController extends Controller
      * @return Response
      */
     public function indexAction(){
-        $auctions = [
-            [
-                "id" => 1,
-                "title" => "Super Samochod",
-                "description" => "Opis Super Samochodu",
-                "price" => "1000 zl",
-            ],
-            [
-                "id" => 2,
-                "title" => "Pralka",
-                "description" => "Opis pralki",
-                "price" => "300 zl",
-            ] ,
-            [
-                "id" => 3,
-                "title" => "Rower",
-                "description" => "Opis roweru",
-                "price" => "500 zl",
-            ],
-        ];
+       $entityManager = $this->getDoctrine()->getManager();
+       $auctions = $entityManager->getRepository(Auctions::class)->findAll();
 
         return $this->render("Auction/index.html.twig" , ["auctions" =>$auctions]);
     }
 
     /**
      * @Route("/{id}" , name="auction_details")
-     * @param $id
+     * @param auctions $auctions
+     *
+     * @return Response
      */
-    public function detalisAction($id){
-        return $this->render("Auction/details.html.twig");
+    public function detalisAction(auctions $auctions){
+
+
+        return $this->render("Auction/details.html.twig" , ["auctions"=>$auctions]);
+    }
+
+    /**
+     * @Route("/auction/add" , name="auction_add")
+     * @return Response
+     */
+    public function addAction(Request $request){
+        $auctions = new auctions();
+
+        $form = $this->createForm(AuctionType::class , $auctions);
+
+        if($request->isMethod("post")){
+            $form->handleRequest($request);
+
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($auctions);
+            $entityManager->flush();
+
+            return $this->redirectToRoute("index_auction");
+        }
+
+        return $this->render("Auction/add.html.twig" , ["form"=>$form->createView()]);
     }
 }
