@@ -1,7 +1,28 @@
 {% extends 'base.html.twig' %}
 {% block body %}
-    <h1>{{ auctions.title }}</h1>
-    <p>{{ auctions.description }}</p>
-    <p>{{ auctions.price }}</p>
-    <a href="{{ url('index_auction') }}">Powrót</a>
+    <ul class="list-group">
+        <li class="list-group-item list-group-item-action list-group-item-dark">Tytuł Aukcji : {{ auctions.title }}</li>
+        <li class="list-group-item list-group-item-action list-group-item-success">Opis : {{ auctions.description }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-primary">Cena : {{ auctions.price }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-info">Cena Wywoławcza: {{ auctions.startingPrice }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-danger">Data Zakończenia aukcji: {{ auctions.expiresAt | date("Y-m-d H:i:s")}} </li>
+    </ul>
+
+    <br/>
+
+    <a href="{{ url('index_auction') }}" class="btn btn-primary position-left">Powrót</a>
+    <br/>
+    {{ form(deleteForm) }}}
+
+    {{ form(finishForm) }}
+
+    {{ form(buyForm) }}
+
+    {{ form(bidForm) }}
+
+    <ul class="list-group">
+        {% for offer in auctions.offers %}
+            <li class="list-group-item list-group-item-action list-group-item-dark">Oferta : {{ offer.price }} złotych , Złożona : {{ offer.createdAt | date("Y-m-d H:i:s")}}</li>
+        {% endfor %}
+    </ul>
 {% endblock %}

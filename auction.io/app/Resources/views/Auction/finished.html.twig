@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <ul class="list-group">
+        <li class="list-group-item list-group-item-action list-group-item-dark">Tytuł Aukcji : {{ auctions.title }}</li>
+        <li class="list-group-item list-group-item-action list-group-item-success">Opis : {{ auctions.description }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-primary">Cena : {{ auctions.price }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-info">Cena Wywoławcza: {{ auctions.startingPrice }} </li>
+        <li class="list-group-item list-group-item-action list-group-item-danger">Aukcja Zakończona: {{ auctions.expiresAt | date("Y-m-d H:i:s")}} </li>
+    </ul>
+
+    <br/>
+
+    <a href="{{ url('index_auction') }}" class="btn btn-primary position-left">Powrót</a>
+    <br/>
+
+
+
+{% endblock %}
