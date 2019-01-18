@@ -13,7 +13,9 @@ use AppBundle\Entity\auctions;
 use AppBundle\Form\AuctionType;
 use AppBundle\Form\BidType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Finder\Exception\AccessDeniedException;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -44,16 +46,6 @@ class AuctionController extends Controller
             return $this->render("Auction/finished.html.twig" , ["auctions" => $auctions]);
         }
 
-        $deleteForm = $this->createFormBuilder()
-            ->setAction($this->generateUrl("auction_remove" , ["id" => $auctions->getId()]))
-            ->setMethod(Request::METHOD_DELETE)
-            ->add("submit" , SubmitType::class , ["label" => "Usuń Aukcję"])
-            ->getForm();
-
-        $finishForm = $this->createFormBuilder()
-            ->setAction($this->generateUrl("auction_finish" , ["id" => $auctions->getId()]))
-            ->add("submit" , SubmitType::class , ["label" => "Zakończ Aukcję"])
-            ->getForm();
 
         $buyForm = $this->createFormBuilder()
             ->setAction($this->generateUrl("offer_buy" , ["id" => $auctions->getId()]))
@@ -71,8 +63,6 @@ class AuctionController extends Controller
             "Auction/details.html.twig" ,
             [
                 "auctions"=>$auctions ,
-                "deleteForm" => $deleteForm->createView() ,
-                "finishForm" => $finishForm->createView() ,
                 "buyForm" => $buyForm->createView(),
                 "bidForm" => $bidForm->createView(),
             ]
@@ -85,6 +75,8 @@ class AuctionController extends Controller
      */
     public function addAction(Request $request)
     {
+        $this->denyAccessUnlessGranted("ROLE_USER");
+
         $auctions = new auctions();
 
         $form = $this->createForm(AuctionType::class, $auctions);
@@ -92,15 +84,25 @@ class AuctionController extends Controller
         if ($request->isMethod("post")) {
             $form->handleRequest($request);
 
-            $auctions
-                ->setStatus(auctions::STATUS_ACTIVE);
+            if($auctions->getStartingPrice() >= $auctions->getPrice()){
+                $form->get("StartingPrice")->addError(new FormError('Cena wywoławcza nie może być wyższa od ceny kup teraz'));
+            }
 
+            if($form->isValid()){
+                $auctions
+                    ->setStatus(auctions::STATUS_ACTIVE)
+                    ->setOwner($this->getUser());
 
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($auctions);
-            $entityManager->flush();
+                $entityManager = $this->getDoctrine()->getManager();
+                $entityManager->persist($auctions);
+                $entityManager->flush();
 
-            return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
+                $this->addFlash("success" , "Aukcja {$auctions->getTitle()} została dodana");
+
+                return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
+            }
+
+            $this->addFlash("warning" , "Nie udało się dodać Aukcji !");
         }
 
         return $this->render("Auction/add.html.twig", ["form" => $form->createView()]);
@@ -113,6 +115,12 @@ class AuctionController extends Controller
      * @return Response
      */
     public function editAction(Request $request , auctions $auctions){
+        $this->denyAccessUnlessGranted("ROLE_USER");
+
+        if($this->getUser() !== $auctions->getOwner()){
+            throw new AccessDeniedException();
+        }
+
         $form = $this->createForm(AuctionType::class,$auctions);
 
         if($request->isMethod("post")){
@@ -121,6 +129,8 @@ class AuctionController extends Controller
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($auctions);
             $entityManager->flush();
+
+            $this->addFlash("success" , "Aukcja {{$auctions->getTitle()}} została wyedytowana");
 
             return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
         }
@@ -134,9 +144,16 @@ class AuctionController extends Controller
      * @return \Symfony\Component\HttpFoundation\RedirectResponse
      */
     public function deleteAction(auctions $auctions){
+        if($this->getUser() !== $auctions->getOwner()){
+            throw new AccessDeniedException();
+        }
+
         $entityManaget = $this->getDoctrine()->getManager();
         $entityManaget->remove($auctions);
         $entityManaget->flush();
+
+        $this->addFlash("success" , "Aukcja {$auctions->getTitle()} została usunięta");
+
         return $this->redirectToRoute("index_auction");
     }
 
@@ -147,6 +164,10 @@ class AuctionController extends Controller
      * @throws \Exception
      */
     public function finishAction(auctions $auctions){
+        if($this->getUser() !== $auctions->getOwner()){
+            throw new AccessDeniedException();
+        }
+
         $form = $this->createForm(AuctionType::class);
 
         $auctions
@@ -156,6 +177,8 @@ class AuctionController extends Controller
         $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($auctions);
         $entityManager->flush();
+
+        $this->addFlash("success" , "Aukcja {$auctions->getTitle()} została zakończona");
 
         return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
     }

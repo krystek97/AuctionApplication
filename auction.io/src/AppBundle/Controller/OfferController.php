@@ -43,6 +43,8 @@ class OfferController extends Controller
         $entityManager->persist($offer);
         $entityManager->flush();
 
+        $this->addFlash("success" , "Kupiłeś przedmiot {$auctions->getTitle()} za kwotę {$offer->getPrice()} zł");
+
         return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
     }
 
@@ -56,15 +58,46 @@ class OfferController extends Controller
         $offer = new Offer();
         $bidForm = $this->createForm(BidType::class , $offer);
 
-        $bidForm->handleRequest($request);
 
-        $offer
-            ->setType(Offer::TYPE_BID)
-            ->setAuction($auctions);
+        $bidForm->handleRequest($request);
 
         $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($offer);
         $entityManager->flush();
+        $lastOffer = $entityManager
+            ->getRepository(Offer::class)
+            ->findOneBy(["auction" => $auctions] , ["createdAt" => "DESC"]);
+
+        if(isset($lastOffer)){
+            if($offer->getPrice() <= $lastOffer->getPrice()){
+                $this->addFlash("warning" , "Twoja oferta nie może być niższa niż {$lastOffer->getPrice()} zł");
+
+                return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
+            }else{
+                if($offer->getPrice() < $auctions->getStartingPrice()){
+                    $this->addFlash("warning" , "Twoja oferta nie może być niższa od ceny wywoławczej");
+
+                    return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
+                }
+            }
+        }
+
+        if($bidForm->isValid()){
+
+
+
+            $offer
+                ->setType(Offer::TYPE_BID)
+                ->setAuction($auctions);
+
+
+
+            $this->addFlash("success" , "Złożyłeś ofertę za przedmiot {$auctions->getTitle()} za cenę {$auctions->getPrice()} zł");
+        }else{
+            $this->addFlash("warning" , "Nie udalo sie zalicytować przedmiotu {$auctions->getTitle()}");
+        }
+
+
 
         return $this->redirectToRoute("auction_details" , ["id" => $auctions->getId()]);
 

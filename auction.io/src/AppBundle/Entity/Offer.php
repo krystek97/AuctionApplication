@@ -4,7 +4,7 @@ namespace AppBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
-
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Offer
@@ -39,6 +39,13 @@ class Offer
      * @var string
      *
      * @ORM\Column(name="type", type="string", length=10)
+     * @Assert\NotBlank(
+     *     message="Cena nie może być pusta"
+     * )
+     * @Assert\GreaterThan(
+     *     value="0" ,
+     *     message="Cena musi być większa od zera"
+     * )
      */
     private $type;
 
@@ -49,6 +56,12 @@ class Offer
 
      */
     private $createdAt;
+
+    /**
+     * @var User
+     * @ORM\ManyToOne(targetEntity="User" , inversedBy="offers")
+     */
+    private $owner;
 
     /**
      * @var \DateTime
@@ -187,6 +200,23 @@ class Offer
      */
     public function getAuction(){
         return $this->auction;
+    }
+
+    /**
+     * @param User $owner
+     * @return $this
+     */
+    public function setOwner(User $owner){
+        $this->owner = $owner;
+
+        return $this;
+    }
+
+    /**
+     * @return User
+     */
+    public function getOwner(){
+        return $this->owner;
     }
 }
 

@@ -5,6 +5,8 @@ namespace AppBundle\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Validator\Constraints as Assert;
+
 /**
  * auctions
  *
@@ -33,6 +35,15 @@ class auctions
      * @var string
      *
      * @ORM\Column(name="title", type="string", length=255)
+     * @Assert\NotBlank(
+     *      message="Pole tytuł nie może być puste"
+     * )
+     * @Assert\Length(
+     *     min = 3 ,
+     *     max = 200 ,
+     *     minMessage="Tytuł nie może być krótszy niż trzy znaki" ,
+     *     maxMessage="Tytuł nie może być dłuższy niż 200 znaków"
+     * )
      */
     private $title;
 
@@ -55,6 +66,13 @@ class auctions
      * @var string
      *
      * @ORM\Column(name="description", type="text")
+     * @Assert\NotBlank(
+     *     message="Pole opis nie może być puste"
+     * )
+     * @Assert\Length(
+     *     min=10 ,
+     *     minMessage="Pole Opis nie może mieć mniej niż 10 znaków"
+     * )
      */
     private $description;
 
@@ -62,18 +80,39 @@ class auctions
      * @var float
      *
      * @ORM\Column(name="price", type="decimal", precision=10, scale=2)
+     * @Assert\NotBlank(
+     *     message="Cena nie może być pusta"
+     * )
+     * @Assert\GreaterThan(
+     *     value="0" ,
+     *     message="Cena musi być większa od zera"
+     * )
      */
     private $price;
 
     /**
      * @var float
      * @ORM\Column(name="startingPrice" , type="decimal" , precision=10 , scale=2)
+     * @Assert\NotBlank(
+     *     message="Cena początkowa aukcji nie może być pusta"
+     * )
+     * @Assert\GreaterThan(
+     *     value="0" ,
+     *     message="Cena początkowa aukcji nie może być mniejsza od zera"
+     * )
      */
     private $startingPrice;
 
     /**
      * @var \DateTime
      * @ORM\Column(name="expiresAt" , type="datetime")
+     * @Assert\NotBlank(
+     *     message="Musisz podać datę zakończenia aukcji"
+     * )
+     * @Assert\GreaterThan(
+     *     value="+1 day" ,
+     *     message="Aukcja nie może kończyć się za mniej niż 24 godziny"
+     * )
      */
     private $expiresAt;
 
@@ -96,6 +135,13 @@ class auctions
      * @ORM\Column(name="status" , type="string" , length=10)
      */
     private $status;
+
+    /**
+     * @var User
+     * @ORM\ManyToOne(targetEntity="AppBundle\Entity\User" , inversedBy="auctions")
+     */
+    private $owner;
+
     /**
      * Get id
      *
@@ -279,6 +325,23 @@ class auctions
         $this->offers = $offer;
 
         return $this;
+    }
+
+    /**
+     * @param User $owner
+     * @return $this
+     */
+    public function setOwner(User $owner){
+        $this->owner = $owner;
+
+        return $this;
+    }
+
+    /**
+     * @return User
+     */
+    public function getOwner(){
+        return $this->owner;
     }
 }
 

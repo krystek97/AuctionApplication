@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+{% block body%}
+    <h1>Moje aukcje</h1>
+    {% for auction in auctions %}
+        <!--ListGroup-->
+        <ul class="list-group">
+            <br/>
+            <li class="list-group-item list-group-item-action list-group-item-dark">Tytuł Aukcji :  <a href="{{ url('my_auction_details' , {"id":auction.id}) }}">{{ auction.title }}</a></li>
+            <li class="list-group-item list-group-item-action list-group-item-success">Opis : {{ auction.description }} </li>
+            <li class="list-group-item list-group-item-action list-group-item-primary">Cena : {{ auction.price }} </li>
+            <li class="list-group-item list-group-item-action list-group-item-info">Cena Wywoławcza: {{ auction.startingPrice }} </li>
+            <li class="list-group-item list-group-item-action list-group-item-danger">Data Zakończenia : {{ auction.expiresAt | date("Y-m-d H:i:s")}} </li>
+        </ul>
+
+    {% else %}
+        <div class="alert alert-danger" role="alert">
+            Nie ma żadnej aktywnej aukcji
+        </div>
+    {% endfor %}
+{% endblock %}
